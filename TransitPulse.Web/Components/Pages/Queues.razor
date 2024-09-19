@@ -1,0 +1,50 @@
+﻿@page "/queues"
+@using TransitPulse.Web.Services
+@using TransitPulse.Web.Models
+@attribute [StreamRendering]
+@inject IServiceBusService ServiceBusService
+
+<PageTitle>Queues</PageTitle>
+
+<h1>Queues</h1>
+
+@if (queues == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Active Messages</th>
+                <th>Total Messages</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var queue in queues)
+            {
+                <tr>
+                    <td>@queue.Name</td>
+                    <td>@queue.ActiveCount</td>
+                    <td>@queue.TotalCount</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private Queue[]? queues;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetQueues();
+    }
+
+    private async Task GetQueues()
+    {
+        queues = await ServiceBusService.GetQueues();
+    }
+}
