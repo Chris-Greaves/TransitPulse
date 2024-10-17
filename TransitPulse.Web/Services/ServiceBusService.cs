@@ -22,10 +22,10 @@ public class ServiceBusService : IServiceBusService
         _client = client;
     }
 
-    public async Task<(List<QueueState>, string?)> GetQueues(string? continuationToken = null)
+    public async Task<List<QueueState>> GetQueues()
     {
         var pager = _adminClient.GetQueuesRuntimePropertiesAsync();
-        var page = await pager.AsPages(continuationToken).FirstAsync();
+        var page = await pager.AsPages().FirstAsync();
 
         var items = new List<QueueState>();
         foreach (var queue in page.Values)
@@ -38,7 +38,7 @@ public class ServiceBusService : IServiceBusService
             });
         }
 
-        return (items, page.ContinuationToken);
+        return items;
     }
 
     public async Task<QueueState> GetQueue(string queueName)

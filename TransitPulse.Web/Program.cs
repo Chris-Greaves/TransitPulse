@@ -19,7 +19,11 @@ builder.Services.AddAzureClients(acBuilder =>
 builder.Services.AddHttpClient();
 builder.Services.AddFluentUIComponents();
 
-builder.Services.AddScoped<IServiceBusService, ServiceBusService>();
+builder.Services.AddMemoryCache();
+
+builder.Services.AddTransient<IServiceBusService, ServiceBusService>();
+
+builder.Services.AddHostedService<QueueBackgroundService>();
 
 var app = builder.Build();
 

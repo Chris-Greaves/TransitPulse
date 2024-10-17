@@ -8,5 +8,5 @@ public interface IServiceBusService
 
     Task<QueueState> GetQueue(string queueName);
 
-    Task<(List<QueueState>, string?)> GetQueues(string? continuationToken = null);
+    Task<List<QueueState>> GetQueues();
 }

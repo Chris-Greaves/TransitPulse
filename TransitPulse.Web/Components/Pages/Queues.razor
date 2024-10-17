@@ -1,5 +1,7 @@
 ﻿@page "/queues"
+@using Microsoft.Extensions.Caching.Memory
 @inject IServiceBusService ServiceBusService
+@inject IMemoryCache Cache
 @inject NavigationManager NavManager
 
 <PageTitle>Queues</PageTitle>
@@ -40,17 +42,19 @@ else
 
     PaginationState Pagination = new() { ItemsPerPage = 10 };
 
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
-        await GetQueues();
+        GetQueues();
     }
 
-    private async Task GetQueues()
+    private void GetQueues()
     {
-        var (queues, token) = await ServiceBusService.GetQueues(continuationToken);
+        var queues =  Cache.Get<List<QueueState>>("queues");
 
-        continuationToken = token;
-        this.queues = queues.AsQueryable();
+        if (queues is not null)
+        {
+            this.queues = queues.AsQueryable();
+        }
     }
 
     private async Task GetMessages(QueueState context)
