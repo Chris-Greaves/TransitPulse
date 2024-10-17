@@ -1,6 +1,6 @@
 ﻿@page "/queues"
-@attribute [StreamRendering]
 @inject IServiceBusService ServiceBusService
+@inject NavigationManager NavManager
 
 <PageTitle>Queues</PageTitle>
 
@@ -24,8 +24,8 @@ else
         <PropertyColumn Property="@(p => p.Name)" Sortable="true" />
         <PropertyColumn Property="@(p => p.ActiveCount)" Sortable="true" />
         <PropertyColumn Property="@(p => p.TotalCount)" Sortable="true" />
-        <TemplateColumn Title="Actions" Align="@Align.End">
-            <FluentButton aria-label="View messages" IconEnd="@(new Icons.Regular.Size16.Edit())" OnClick="@(async () => await GetMessages(context))" />
+        <TemplateColumn Title="View" Align="@Align.End">
+            <FluentButton aria-label="View" IconEnd="@(new Icons.Regular.Size16.ContentView())" OnClick="@(() => NavigateToQueue(context))" />
         </TemplateColumn>
     </FluentDataGrid>
 
@@ -34,6 +34,8 @@ else
 
 @code {
     private IQueryable<QueueState>? queues;
+
+    private string? continuationToken;
     private string[]? _messages;
 
     PaginationState Pagination = new() { ItemsPerPage = 10 };
@@ -45,17 +47,19 @@ else
 
     private async Task GetQueues()
     {
-        var queues = new List<QueueState>();
-        await foreach (var queue in ServiceBusService.GetQueues())
-        {
-            queues.Add(queue);
-        }
+        var (queues, token) = await ServiceBusService.GetQueues(continuationToken);
 
+        continuationToken = token;
         this.queues = queues.AsQueryable();
     }
 
     private async Task GetMessages(QueueState context)
     {
         _messages = await ServiceBusService.GetMessages(context.Name);
+    }
+
+    private void NavigateToQueue(QueueState context)
+    {
+        NavManager.NavigateTo($"/queue/{context.Name}");
     }
 }

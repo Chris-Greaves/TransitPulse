@@ -5,5 +5,8 @@ namespace TransitPulse.Web.Services;
 public interface IServiceBusService
 {
     Task<string[]> GetMessages(string queueName, int count = 5);
-    IAsyncEnumerable<QueueState> GetQueues();
+
+    Task<QueueState> GetQueue(string queueName);
+
+    Task<(List<QueueState>, string?)> GetQueues(string? continuationToken = null);
 }

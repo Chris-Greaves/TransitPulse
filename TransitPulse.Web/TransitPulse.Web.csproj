@@ -13,6 +13,7 @@
 		<PackageReference Include="Microsoft.FluentUI.AspNetCore.Components" Version="4.10.2" />
 		<PackageReference Include="Microsoft.FluentUI.AspNetCore.Components.Emoji" Version="4.6.0" />
 		<PackageReference Include="Microsoft.FluentUI.AspNetCore.Components.Icons" Version="4.10.2" />
+		<PackageReference Include="System.Linq.Async" Version="6.0.1" />
 	</ItemGroup>
 
 </Project>
