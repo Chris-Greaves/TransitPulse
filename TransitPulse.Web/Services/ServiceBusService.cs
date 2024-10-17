@@ -15,13 +15,13 @@ public class ServiceBusService : IServiceBusService
         _client = client;
     }
 
-    public async Task<Queue[]> GetQueues()
+    public async Task<QueueState[]> GetQueues()
     {
         var queues = _adminClient.GetQueuesRuntimePropertiesAsync();
-        var results = new List<Queue>();
+        var results = new List<QueueState>();
         await foreach (var queue in queues)
         {
-            results.Add(new Queue
+            results.Add(new QueueState
             {
                 Name = queue.Name,
                 ActiveCount = queue.ActiveMessageCount,

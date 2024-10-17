@@ -14,29 +14,15 @@
 }
 else
 {
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Name</th>
-                <th>Active Messages</th>
-                <th>Total Messages</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var queue in queues)
-            {
-                <tr>
-                    <td>@queue.Name</td>
-                    <td>@queue.ActiveCount</td>
-                    <td>@queue.TotalCount</td>
-                </tr>
-            }
-        </tbody>
-    </table>
+    <FluentDataGrid Items="@queues">
+        <PropertyColumn Property="@(p => p.Name)" Sortable="true" />
+        <PropertyColumn Property="@(p => p.ActiveCount)" Sortable="true" />
+        <PropertyColumn Property="@(p => p.TotalCount)" Sortable="true" />
+    </FluentDataGrid>
 }
 
 @code {
-    private Queue[]? queues;
+    private IQueryable<QueueState>? queues;
 
     protected override async Task OnInitializedAsync()
     {
@@ -45,6 +31,6 @@ else
 
     private async Task GetQueues()
     {
-        queues = await ServiceBusService.GetQueues();
+        queues = (await ServiceBusService.GetQueues()).AsQueryable();
     }
 }
