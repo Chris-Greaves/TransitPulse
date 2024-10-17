@@ -1,0 +1,48 @@
+﻿@page "/queue/{queueName}"
+@inject IServiceBusService ServiceBusService
+
+@if (state is null)
+{
+    <p>You need to specify a queue that exists, return to the Queues page to find a valid queue.</p>
+}
+else
+{
+    <FluentLabel Typo="Typography.Header">Queue: @state.Name</FluentLabel>
+
+    <FluentButton Loading="@loading" OnClick="@LoadMessagesAsync" Appearance="Appearance.Accent">Load messages</FluentButton>
+
+    <FluentListbox TOption="string" Items="@messages" @bind-SelectedOption="@listboxValue" />
+
+    if (listboxValue is not null)
+    {
+        <p>@listboxValue</p>
+    }
+}
+
+@code {
+    [Parameter]
+    public string? QueueName { get; set; }
+
+    private QueueState? state;
+
+    private bool loading = false;
+    private string? listboxValue;
+    private string[] messages = [];
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!string.IsNullOrEmpty(QueueName))
+        {
+            state = await ServiceBusService.GetQueue(QueueName);
+        }
+    }
+
+    async Task LoadMessagesAsync()
+    {
+        loading = true;
+
+        messages = await ServiceBusService.GetMessages(state!.Name, 5);
+
+        loading = false;
+    }
+}

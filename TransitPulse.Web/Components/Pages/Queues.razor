@@ -1,12 +1,18 @@
 ﻿@page "/queues"
-@using TransitPulse.Web.Services
-@using TransitPulse.Web.Models
-@attribute [StreamRendering]
 @inject IServiceBusService ServiceBusService
+@inject NavigationManager NavManager
 
 <PageTitle>Queues</PageTitle>
 
 <h1>Queues</h1>
+
+@if (_messages != null)
+{
+    foreach (var msg in _messages)
+    {
+        <p>@msg</p>
+    }
+}
 
 @if (queues == null)
 {
@@ -14,29 +20,25 @@
 }
 else
 {
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Name</th>
-                <th>Active Messages</th>
-                <th>Total Messages</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var queue in queues)
-            {
-                <tr>
-                    <td>@queue.Name</td>
-                    <td>@queue.ActiveCount</td>
-                    <td>@queue.TotalCount</td>
-                </tr>
-            }
-        </tbody>
-    </table>
+    <FluentDataGrid Items="@queues" Pagination="@Pagination">
+        <PropertyColumn Property="@(p => p.Name)" Sortable="true" />
+        <PropertyColumn Property="@(p => p.ActiveCount)" Sortable="true" />
+        <PropertyColumn Property="@(p => p.TotalCount)" Sortable="true" />
+        <TemplateColumn Title="View" Align="@Align.End">
+            <FluentButton aria-label="View" IconEnd="@(new Icons.Regular.Size16.ContentView())" OnClick="@(() => NavigateToQueue(context))" />
+        </TemplateColumn>
+    </FluentDataGrid>
+
+    <FluentPaginator State="@Pagination" />
 }
 
 @code {
-    private Queue[]? queues;
+    private IQueryable<QueueState>? queues;
+
+    private string? continuationToken;
+    private string[]? _messages;
+
+    PaginationState Pagination = new() { ItemsPerPage = 10 };
 
     protected override async Task OnInitializedAsync()
     {
@@ -45,6 +47,19 @@ else
 
     private async Task GetQueues()
     {
-        queues = await ServiceBusService.GetQueues();
+        var (queues, token) = await ServiceBusService.GetQueues(continuationToken);
+
+        continuationToken = token;
+        this.queues = queues.AsQueryable();
+    }
+
+    private async Task GetMessages(QueueState context)
+    {
+        _messages = await ServiceBusService.GetMessages(context.Name);
+    }
+
+    private void NavigateToQueue(QueueState context)
+    {
+        NavManager.NavigateTo($"/queue/{context.Name}");
     }
 }

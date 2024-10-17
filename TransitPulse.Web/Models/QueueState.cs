@@ -1,6 +1,6 @@
 ﻿namespace TransitPulse.Web.Models;
 
-public class Queue
+public class QueueState
 {
     public required string Name { get; set; }
     public long ActiveCount { get; internal set; }
