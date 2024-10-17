@@ -1,69 +1,61 @@
 ﻿@page "/queues"
+@using Microsoft.EntityFrameworkCore
 @using Microsoft.Extensions.Caching.Memory
-@inject IServiceBusService ServiceBusService
-@inject IMemoryCache Cache
+@inject IDbContextFactory<QueueDbContext> DbContextFactory
 @inject NavigationManager NavManager
+@implements IDisposable
 
 <PageTitle>Queues</PageTitle>
 
-<h1>Queues</h1>
-
-@if (_messages != null)
-{
-    foreach (var msg in _messages)
-    {
-        <p>@msg</p>
-    }
-}
-
-@if (queues == null)
-{
-    <p><em>Loading...</em></p>
-}
-else
-{
-    <FluentDataGrid Items="@queues" Pagination="@Pagination">
-        <PropertyColumn Property="@(p => p.Name)" Sortable="true" />
-        <PropertyColumn Property="@(p => p.ActiveCount)" Sortable="true" />
-        <PropertyColumn Property="@(p => p.TotalCount)" Sortable="true" />
-        <TemplateColumn Title="View" Align="@Align.End">
-            <FluentButton aria-label="View" IconEnd="@(new Icons.Regular.Size16.ContentView())" OnClick="@(() => NavigateToQueue(context))" />
-        </TemplateColumn>
+<div style="height: 400px; overflow-y: scroll;">
+    <FluentDataGrid Virtualize="true" Items="@GetQueues()" Pagination="@pagination">
+            <ChildContent>
+            <PropertyColumn Property="@(p => p.Name)" Sortable="true" />
+            <PropertyColumn Property="@(p => p.ActiveCount)" Sortable="true" />
+            <PropertyColumn Property="@(p => p.TotalCount)" Sortable="true" />
+            <TemplateColumn Title="View" Align="@Align.End">
+                <FluentButton aria-label="View" IconEnd="@(new Icons.Regular.Size16.ContentView())" OnClick="@(() => NavigateToQueue(context))" />
+            </TemplateColumn>
+        </ChildContent>
+        <LoadingContent>
+            <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Center">
+                Loading...<br />
+                <FluentProgress Width="240px" />
+            </FluentStack>
+        </LoadingContent>
     </FluentDataGrid>
+</div>
 
-    <FluentPaginator State="@Pagination" />
-}
+<FluentPaginator State="@pagination" />
 
 @code {
-    private IQueryable<QueueState>? queues;
+    private PaginationState pagination = new PaginationState { ItemsPerPage = 10 };
 
-    private string? continuationToken;
-    private string[]? _messages;
+    private QueueDbContext? _dbContext;
 
-    PaginationState Pagination = new() { ItemsPerPage = 10 };
+    private IQueryable<QueueState>? GetQueues()
+    {
+        if (_dbContext is null)
+        {
+            return null;
+        }
+
+        var result = _dbContext.Queues.AsNoTracking().AsQueryable();
+        return result;
+    }
 
     protected override void OnInitialized()
     {
-        GetQueues();
-    }
-
-    private void GetQueues()
-    {
-        var queues =  Cache.Get<List<QueueState>>("queues");
-
-        if (queues is not null)
-        {
-            this.queues = queues.AsQueryable();
-        }
-    }
-
-    private async Task GetMessages(QueueState context)
-    {
-        _messages = await ServiceBusService.GetMessages(context.Name);
+        _dbContext = DbContextFactory.CreateDbContext();
     }
 
     private void NavigateToQueue(QueueState context)
     {
         NavManager.NavigateTo($"/queue/{context.Name}");
+    }
+
+    public void Dispose()
+    {
+        _dbContext?.Dispose();
     }
 }

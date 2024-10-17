@@ -22,25 +22,6 @@ public class ServiceBusService : IServiceBusService
         _client = client;
     }
 
-    public async Task<List<QueueState>> GetQueues()
-    {
-        var pager = _adminClient.GetQueuesRuntimePropertiesAsync();
-        var page = await pager.AsPages().FirstAsync();
-
-        var items = new List<QueueState>();
-        foreach (var queue in page.Values)
-        {
-            items.Add(new QueueState
-            {
-                Name = queue.Name,
-                ActiveCount = queue.ActiveMessageCount,
-                TotalCount = queue.TotalMessageCount
-            });
-        }
-
-        return items;
-    }
-
     public async Task<QueueState> GetQueue(string queueName)
     {
         var queue = await _adminClient.GetQueueRuntimePropertiesAsync(queueName);

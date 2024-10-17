@@ -7,6 +7,4 @@ public interface IServiceBusService
     Task<string[]> GetMessages(string queueName, int count = 5);
 
     Task<QueueState> GetQueue(string queueName);
-
-    Task<List<QueueState>> GetQueues();
 }

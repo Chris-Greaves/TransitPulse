@@ -5,7 +5,7 @@ VisualStudioVersion = 17.11.35208.52
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TransitPulse.Web", "TransitPulse.Web\TransitPulse.Web.csproj", "{A4E0D38C-A22B-42BF-8D58-C463C0D2E6B9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TransitPulse.AppHost", "TransitPulse.AppHost\TransitPulse.AppHost.csproj", "{1462BACE-3E0F-425D-866E-8E640303BA45}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TransitPulse.AppHost", "TransitPulse.AppHost\TransitPulse.AppHost.csproj", "{1462BACE-3E0F-425D-866E-8E640303BA45}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
