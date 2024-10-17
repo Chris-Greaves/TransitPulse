@@ -1,6 +1,4 @@
 ﻿@page "/queues"
-@using TransitPulse.Web.Services
-@using TransitPulse.Web.Models
 @attribute [StreamRendering]
 @inject IServiceBusService ServiceBusService
 
@@ -8,21 +6,37 @@
 
 <h1>Queues</h1>
 
+@if (_messages != null)
+{
+    foreach (var msg in _messages)
+    {
+        <p>@msg</p>
+    }
+}
+
 @if (queues == null)
 {
     <p><em>Loading...</em></p>
 }
 else
 {
-    <FluentDataGrid Items="@queues">
+    <FluentDataGrid Items="@queues" Pagination="@Pagination">
         <PropertyColumn Property="@(p => p.Name)" Sortable="true" />
         <PropertyColumn Property="@(p => p.ActiveCount)" Sortable="true" />
         <PropertyColumn Property="@(p => p.TotalCount)" Sortable="true" />
+        <TemplateColumn Title="Actions" Align="@Align.End">
+            <FluentButton aria-label="View messages" IconEnd="@(new Icons.Regular.Size16.Edit())" OnClick="@(async () => await GetMessages(context))" />
+        </TemplateColumn>
     </FluentDataGrid>
+
+    <FluentPaginator State="@Pagination" />
 }
 
 @code {
     private IQueryable<QueueState>? queues;
+    private string[]? _messages;
+
+    PaginationState Pagination = new() { ItemsPerPage = 10 };
 
     protected override async Task OnInitializedAsync()
     {
@@ -31,6 +45,17 @@ else
 
     private async Task GetQueues()
     {
-        queues = (await ServiceBusService.GetQueues()).AsQueryable();
+        var queues = new List<QueueState>();
+        await foreach (var queue in ServiceBusService.GetQueues())
+        {
+            queues.Add(queue);
+        }
+
+        this.queues = queues.AsQueryable();
+    }
+
+    private async Task GetMessages(QueueState context)
+    {
+        _messages = await ServiceBusService.GetMessages(context.Name);
     }
 }
