@@ -6,14 +6,6 @@
 
 <h1>Queues</h1>
 
-@if (_messages != null)
-{
-    foreach (var msg in _messages)
-    {
-        <p>@msg</p>
-    }
-}
-
 @if (queues == null)
 {
     <p><em>Loading...</em></p>
@@ -36,7 +28,6 @@ else
     private IQueryable<QueueState>? queues;
 
     private string? continuationToken;
-    private string[]? _messages;
 
     PaginationState Pagination = new() { ItemsPerPage = 10 };
 
@@ -47,15 +38,21 @@ else
 
     private async Task GetQueues()
     {
-        var (queues, token) = await ServiceBusService.GetQueues(continuationToken);
+        do
+        {
+            var (results, token) = await ServiceBusService.GetQueues(continuationToken);
 
-        continuationToken = token;
-        this.queues = queues.AsQueryable();
-    }
-
-    private async Task GetMessages(QueueState context)
-    {
-        _messages = await ServiceBusService.GetMessages(context.Name);
+            continuationToken = token;
+            if (queues == null)
+            {
+                this.queues = results.AsQueryable();
+            }
+            else
+            {
+                queues = queues.Concat(results);
+            }
+        }
+        while (!string.IsNullOrEmpty(continuationToken));
     }
 
     private void NavigateToQueue(QueueState context)
