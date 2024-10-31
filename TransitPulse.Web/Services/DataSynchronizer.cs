@@ -53,6 +53,7 @@ public class DataSynchronizer : BackgroundService
                 });
 
                 await BulkInsert(connection, mappedQueues, stoppingToken);
+                await Task.Delay(1_000, stoppingToken);
             }
 
             await connection.CloseAsync();

@@ -8,9 +8,15 @@
 <PageTitle>Queues</PageTitle>
 
 <div style="height: 400px; overflow-y: scroll;">
-    <FluentDataGrid Virtualize="true" Items="@GetQueues()" Pagination="@pagination">
-            <ChildContent>
-            <PropertyColumn Property="@(p => p.Name)" Sortable="true" />
+    <FluentDataGrid Virtualize="true" Items="@FilteredQueues" Pagination="@pagination">
+        <ChildContent>
+            <PropertyColumn Property="@(p => p.Name)" Sortable="true" Filtered="!string.IsNullOrWhiteSpace(nameFilter)">
+                <ColumnOptions>
+                    <div class="search-box">
+                        <FluentSearch Autofocus=true @bind-Value=nameFilter @oninput="HandleNameFilter" @bind-Value:after="HandleClear" Placeholder="Queue name..." Style="width: 100%;" Label="Filter" />
+                    </div>
+                </ColumnOptions>
+            </PropertyColumn>
             <PropertyColumn Property="@(p => p.ActiveCount)" Sortable="true" />
             <PropertyColumn Property="@(p => p.TotalCount)" Sortable="true" />
             <TemplateColumn Title="View" Align="@Align.End">
@@ -31,22 +37,47 @@
 @code {
     private PaginationState pagination = new PaginationState { ItemsPerPage = 10 };
 
+    private string nameFilter = string.Empty;
+
     private QueueDbContext? _dbContext;
-
-    private IQueryable<QueueState>? GetQueues()
+    
+    IQueryable<QueueState>? FilteredQueues
     {
-        if (_dbContext is null)
+        get
         {
-            return null;
-        }
+            var result = queues;
 
-        var result = _dbContext.Queues.AsNoTracking().AsQueryable();
-        return result;
+            if (result is not null && !string.IsNullOrEmpty(nameFilter))
+            {
+                result = result.Where(c => EF.Functions.Like(c.Name, $"%{nameFilter}%"));
+            }
+            
+            return result;
+        }
     }
+
+    private IQueryable<QueueState>? queues;
 
     protected override void OnInitialized()
     {
         _dbContext = DbContextFactory.CreateDbContext();
+        queues = _dbContext.Queues.AsNoTracking().AsQueryable();
+    }
+    
+    private void HandleNameFilter(ChangeEventArgs args)
+    {
+        if (args.Value is string value)
+        {
+            nameFilter = value;
+        }
+    }
+    
+    private void HandleClear()
+    {
+        if (string.IsNullOrWhiteSpace(nameFilter))
+        {
+            nameFilter = string.Empty;
+        }
     }
 
     private void NavigateToQueue(QueueState context)
