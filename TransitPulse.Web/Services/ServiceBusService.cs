@@ -11,6 +11,11 @@ public class ServiceBusService : IServiceBusService
     private readonly ServiceBusAdministrationClient _adminClient;
     private readonly ServiceBusClient _client;
 
+    private JsonSerializerOptions _defaultSerializerOptions = new JsonSerializerOptions
+    {
+        WriteIndented = true
+    };
+
     private static readonly ServiceBusReceiverOptions _receiverOptions = new()
     {
         Identifier = "transitpulse.web"
@@ -47,7 +52,11 @@ public class ServiceBusService : IServiceBusService
             var payloads = new List<ServiceBusMessage>();
             foreach (var message in messages)
             {
-                var msg = new ServiceBusMessage(message.MessageId, message.ApplicationProperties, message.EnqueuedTime, JsonDocument.Parse(message.Body));
+                using var payloadStream = message.Body.ToStream();
+                using var payload = await JsonDocument.ParseAsync(payloadStream);
+                var prettifiedJson = JsonSerializer.Serialize(payload.RootElement, _defaultSerializerOptions);
+
+                var msg = new ServiceBusMessage(message.MessageId, message.ApplicationProperties, message.EnqueuedTime, prettifiedJson);
                 payloads.Add(msg);
             }
 
@@ -67,4 +76,4 @@ public class ServiceBusService : IServiceBusService
     }
 }
 
-public record ServiceBusMessage(string MessageId, IReadOnlyDictionary<string, object> ApplicationProperties, DateTimeOffset EnqueuedAt, JsonDocument Payload);
+public record ServiceBusMessage(string MessageId, IReadOnlyDictionary<string, object> ApplicationProperties, DateTimeOffset EnqueuedAt, string Payload);

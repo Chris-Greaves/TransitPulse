@@ -1,0 +1,5 @@
+﻿.text {
+    display: block; /* or inline-block */
+    text-overflow: ellipsis;
+    word-wrap: break-word;
+}
