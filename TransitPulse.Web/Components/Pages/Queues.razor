@@ -7,30 +7,26 @@
 
 <PageTitle>Queues</PageTitle>
 
-<div style="height: 400px; overflow-y: scroll;">
-    <FluentDataGrid Virtualize="true" Items="@FilteredQueues" Pagination="@pagination">
-        <ChildContent>
-            <PropertyColumn Property="@(p => p.Name)" Sortable="true" Filtered="!string.IsNullOrWhiteSpace(nameFilter)">
-                <ColumnOptions>
-                    <div class="search-box">
-                        <FluentSearch Autofocus=true @bind-Value=nameFilter @oninput="HandleNameFilter" @bind-Value:after="HandleClear" Placeholder="Queue name..." Style="width: 100%;" Label="Filter" />
-                    </div>
-                </ColumnOptions>
-            </PropertyColumn>
-            <PropertyColumn Property="@(p => p.ActiveCount)" Sortable="true" />
-            <PropertyColumn Property="@(p => p.TotalCount)" Sortable="true" />
-            <TemplateColumn Title="View" Align="@Align.End">
-                <FluentButton aria-label="View" IconEnd="@(new Icons.Regular.Size16.ContentView())" OnClick="@(() => NavigateToQueue(context))" />
-            </TemplateColumn>
-        </ChildContent>
-        <LoadingContent>
-            <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Center">
-                Loading...<br />
-                <FluentProgress Width="240px" />
-            </FluentStack>
-        </LoadingContent>
-    </FluentDataGrid>
-</div>
+<FluentDataGrid 
+    Items="@FilteredQueues" 
+    Pagination="@pagination"
+    ResizableColumns="true"
+    ResizeType="DataGridResizeType.Discrete"
+    HeaderCellAsButtonWithMenu="true"
+    Style="height: 600px; overflow-y: scroll;">
+    <PropertyColumn Property="@(p => p.Name)" Sortable="true" Filtered="!string.IsNullOrWhiteSpace(nameFilter)" Tooltip="true">
+        <ColumnOptions>
+            <div class="search-box">
+                <FluentSearch Autofocus=true @bind-Value=nameFilter @oninput="HandleNameFilter" @bind-Value:after="HandleClear" Placeholder="Queue name..." Style="width: 100%;" Label="Filter" />
+            </div>
+        </ColumnOptions>
+    </PropertyColumn>
+    <PropertyColumn Property="@(p => p.ActiveCount)" Sortable="true" />
+    <PropertyColumn Property="@(p => p.TotalCount)" Sortable="true" />
+    <TemplateColumn Title="View" Align="@Align.End">
+        <FluentButton aria-label="View" IconEnd="@(new Icons.Regular.Size16.ContentView())" OnClick="@(() => NavigateToQueue(context))" />
+    </TemplateColumn>
+</FluentDataGrid>
 
 <FluentPaginator State="@pagination" />
 
