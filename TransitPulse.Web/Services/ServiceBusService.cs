@@ -1,5 +1,6 @@
 ﻿using Azure.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus.Administration;
+using System.Text.Json;
 using TransitPulse.Web.Models;
 
 namespace TransitPulse.Web.Services;
@@ -34,7 +35,7 @@ public class ServiceBusService : IServiceBusService
         };
     }
 
-    public async Task<string[]> GetMessages(string queueName, int count = 5)
+    public async Task<ServiceBusMessage[]> GetMessages(string queueName, int count = 5)
     {
         ServiceBusReceiver? receiver = null;
         try
@@ -43,10 +44,11 @@ public class ServiceBusService : IServiceBusService
 
             var messages = await receiver.PeekMessagesAsync(count);
 
-            var payloads = new List<string>();
+            var payloads = new List<ServiceBusMessage>();
             foreach (var message in messages)
             {
-                payloads.Add(message.Body.ToString());
+                var msg = new ServiceBusMessage(message.MessageId, message.ApplicationProperties, message.EnqueuedTime, JsonDocument.Parse(message.Body));
+                payloads.Add(msg);
             }
 
             return [.. payloads];
@@ -64,3 +66,5 @@ public class ServiceBusService : IServiceBusService
         }
     }
 }
+
+public record ServiceBusMessage(string MessageId, IReadOnlyDictionary<string, object> ApplicationProperties, DateTimeOffset EnqueuedAt, JsonDocument Payload);

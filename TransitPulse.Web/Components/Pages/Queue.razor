@@ -1,4 +1,5 @@
 ﻿@page "/queue/{queueName}"
+@using System.Text.Json
 @inject IServiceBusService ServiceBusService
 
 @if (state is null)
@@ -11,11 +12,55 @@ else
 
     <FluentButton Loading="@loading" OnClick="@LoadMessagesAsync" Appearance="Appearance.Accent">Load messages</FluentButton>
 
-    <FluentListbox TOption="string" Items="@messages" @bind-SelectedOption="@listboxValue" />
+    <FluentListbox TOption="ServiceBusMessage" Items="@messages" @bind-SelectedOption="@listboxValue">
+        <OptionTemplate>
+            @context.MessageId | @context.EnqueuedAt
+        </OptionTemplate>
+    </FluentListbox>
 
     if (listboxValue is not null)
     {
-        <p>@listboxValue</p>
+        if (listboxValue.ApplicationProperties is not null)
+        {
+            <h3>Application properties</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Key</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in listboxValue.ApplicationProperties)
+                    {
+                        <tr>
+                            <td>@item.Key</td>
+                            <td>@item.Value</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+
+        <h3>Payload</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Key</th>
+                    <th>Value</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in listboxValue.Payload.RootElement.EnumerateObject())
+                {
+                    <tr>
+                        <td>@item.Name</td>
+                        <td>@item.Value</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
     }
 }
 
@@ -26,8 +71,8 @@ else
     private QueueState? state;
 
     private bool loading = false;
-    private string? listboxValue;
-    private string[] messages = [];
+    private ServiceBusMessage? listboxValue;
+    private ServiceBusMessage[] messages = [];
 
     protected override async Task OnParametersSetAsync()
     {

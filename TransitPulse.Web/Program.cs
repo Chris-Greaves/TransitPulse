@@ -24,7 +24,7 @@ builder.Services.AddDbContextFactory<QueueDbContext>(options => options.UseSqlit
 
 builder.Services.AddTransient<IServiceBusService, ServiceBusService>();
 
-builder.Services.AddHostedService<DataSynchronizer>();
+//builder.Services.AddHostedService<DataSynchronizer>();
 
 var app = builder.Build();
 

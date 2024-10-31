@@ -13,6 +13,7 @@
     ResizableColumns="true"
     ResizeType="DataGridResizeType.Discrete"
     HeaderCellAsButtonWithMenu="true"
+    GridTemplateColumns="1fr 0.2fr 0.2fr 0.2fr"
     Style="height: 600px; overflow-y: scroll;">
     <PropertyColumn Property="@(p => p.Name)" Sortable="true" Filtered="!string.IsNullOrWhiteSpace(nameFilter)" Tooltip="true">
         <ColumnOptions>
@@ -23,7 +24,7 @@
     </PropertyColumn>
     <PropertyColumn Property="@(p => p.ActiveCount)" Sortable="true" />
     <PropertyColumn Property="@(p => p.TotalCount)" Sortable="true" />
-    <TemplateColumn Title="View" Align="@Align.End">
+    <TemplateColumn Title="View" Align="@Align.End" SortBy="@rankSort" IsDefaultSortColumn=true>
         <FluentButton aria-label="View" IconEnd="@(new Icons.Regular.Size16.ContentView())" OnClick="@(() => NavigateToQueue(context))" />
     </TemplateColumn>
 </FluentDataGrid>
@@ -33,17 +34,23 @@
 @code {
     private PaginationState pagination = new PaginationState { ItemsPerPage = 10 };
 
-    private string nameFilter = string.Empty;
+    private string nameFilter = "_error";
 
     private QueueDbContext? _dbContext;
-    
+
+    GridSort<QueueState> rankSort = GridSort<QueueState>
+        .ByDescending(q => q.TotalCount);
+
     IQueryable<QueueState>? FilteredQueues
     {
         get
         {
             var result = queues;
 
-            if (result is not null && !string.IsNullOrEmpty(nameFilter))
+            if (result is null)
+                return result;
+
+            if (!string.IsNullOrEmpty(nameFilter))
             {
                 result = result.Where(c => EF.Functions.Like(c.Name, $"%{nameFilter}%"));
             }
