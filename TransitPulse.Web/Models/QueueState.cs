@@ -2,7 +2,9 @@
 
 public class QueueState
 {
-    public required string Name { get; set; }
-    public long ActiveCount { get; internal set; }
-    public long TotalCount { get; internal set; }
+    public string Name { get; set; }
+
+    public long ActiveCount { get; set; }
+
+    public long TotalCount { get; set; }
 }

@@ -1,5 +1,6 @@
 ﻿using Azure.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus.Administration;
+using System.Text.Json;
 using TransitPulse.Web.Models;
 
 namespace TransitPulse.Web.Services;
@@ -9,6 +10,11 @@ public class ServiceBusService : IServiceBusService
     private readonly ILogger<ServiceBusService> _logger;
     private readonly ServiceBusAdministrationClient _adminClient;
     private readonly ServiceBusClient _client;
+
+    private JsonSerializerOptions _defaultSerializerOptions = new JsonSerializerOptions
+    {
+        WriteIndented = true
+    };
 
     private static readonly ServiceBusReceiverOptions _receiverOptions = new()
     {
@@ -20,25 +26,6 @@ public class ServiceBusService : IServiceBusService
         _logger = logger;
         _adminClient = adminClient;
         _client = client;
-    }
-
-    public async Task<(List<QueueState>, string?)> GetQueues(string? continuationToken = null)
-    {
-        var pager = _adminClient.GetQueuesRuntimePropertiesAsync();
-        var page = await pager.AsPages(continuationToken).FirstAsync();
-
-        var items = new List<QueueState>();
-        foreach (var queue in page.Values)
-        {
-            items.Add(new QueueState
-            {
-                Name = queue.Name,
-                ActiveCount = queue.ActiveMessageCount,
-                TotalCount = queue.TotalMessageCount
-            });
-        }
-
-        return (items, page.ContinuationToken);
     }
 
     public async Task<QueueState> GetQueue(string queueName)
@@ -53,7 +40,7 @@ public class ServiceBusService : IServiceBusService
         };
     }
 
-    public async Task<string[]> GetMessages(string queueName, int count = 5)
+    public async Task<ServiceBusMessage[]> GetMessages(string queueName, int count = 5)
     {
         ServiceBusReceiver? receiver = null;
         try
@@ -62,10 +49,15 @@ public class ServiceBusService : IServiceBusService
 
             var messages = await receiver.PeekMessagesAsync(count);
 
-            var payloads = new List<string>();
+            var payloads = new List<ServiceBusMessage>();
             foreach (var message in messages)
             {
-                payloads.Add(message.Body.ToString());
+                using var payloadStream = message.Body.ToStream();
+                using var payload = await JsonDocument.ParseAsync(payloadStream);
+                var prettifiedJson = JsonSerializer.Serialize(payload.RootElement, _defaultSerializerOptions);
+
+                var msg = new ServiceBusMessage(message.MessageId, message.ApplicationProperties, message.EnqueuedTime, prettifiedJson);
+                payloads.Add(msg);
             }
 
             return [.. payloads];
@@ -83,3 +75,5 @@ public class ServiceBusService : IServiceBusService
         }
     }
 }
+
+public record ServiceBusMessage(string MessageId, IReadOnlyDictionary<string, object> ApplicationProperties, DateTimeOffset EnqueuedAt, string Payload);

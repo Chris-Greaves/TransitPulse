@@ -1,4 +1,5 @@
 ﻿@page "/queue/{queueName}"
+@using System.Text.Json
 @inject IServiceBusService ServiceBusService
 
 @if (state is null)
@@ -7,16 +8,86 @@
 }
 else
 {
-    <FluentLabel Typo="Typography.Header">Queue: @state.Name</FluentLabel>
+    <FluentGrid>
 
-    <FluentButton Loading="@loading" OnClick="@LoadMessagesAsync" Appearance="Appearance.Accent">Load messages</FluentButton>
+        <FluentGridItem xs="12" sm="6" Gap="2em;">
+            <FluentGrid>
+                <FluentGridItem xs="12">
+                    <FluentLabel Typo="Typography.Header">Queue: @state.Name</FluentLabel>
+                </FluentGridItem>
 
-    <FluentListbox TOption="string" Items="@messages" @bind-SelectedOption="@listboxValue" />
+                <FluentGridItem xs="12">
+                    <FluentListbox TOption="ServiceBusMessage" Items="@messages" @bind-SelectedOption="@listboxValue">
+                        <OptionTemplate>
+                            @context.MessageId <span>@context.EnqueuedAt</span>
+                        </OptionTemplate>
+                    </FluentListbox>
+                </FluentGridItem>
+            </FluentGrid>
+        </FluentGridItem>
 
-    if (listboxValue is not null)
+        @if (listboxValue is not null)
+        {
+            <FluentGridItem xs="12" sm="6">
+                @if (listboxValue.ApplicationProperties is not null)
+                {
+                    <h3>Application properties</h3>
+                    <table style="display: block; height: 300px; overflow-y: auto;">
+                        <thead>
+                            <tr>
+                                <th>Key</th>
+                                <th>Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in listboxValue.ApplicationProperties)
+                            {
+                                <tr>
+                                    <td>@item.Key</td>
+                                    <td class="text">@Truncate(item.Value, 75)</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </FluentGridItem>
+
+            <FluentGridItem xs="12">
+                <h3>Payload</h3>
+                <pre style="display: block; height: 300px; overflow-y: auto;">@listboxValue.Payload</pre>
+            </FluentGridItem>
+        }
+    </FluentGrid>
+    
+
+    
+
+    
+
+    @* if (listboxValue is not null)
     {
-        <p>@listboxValue</p>
-    }
+        
+
+        <h3>Payload</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Key</th>
+                    <th>Value</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in listboxValue.Payload.RootElement.EnumerateObject())
+                {
+                    <tr>
+                        <td>@item.Name</td>
+                        <td>@item.Value</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    } *@
 }
 
 @code {
@@ -26,14 +97,15 @@ else
     private QueueState? state;
 
     private bool loading = false;
-    private string? listboxValue;
-    private string[] messages = [];
+    private ServiceBusMessage? listboxValue;
+    private ServiceBusMessage[] messages = [];
 
     protected override async Task OnParametersSetAsync()
     {
         if (!string.IsNullOrEmpty(QueueName))
         {
             state = await ServiceBusService.GetQueue(QueueName);
+            messages = await ServiceBusService.GetMessages(QueueName, 5);
         }
     }
 
@@ -44,5 +116,15 @@ else
         messages = await ServiceBusService.GetMessages(state!.Name, 5);
 
         loading = false;
+    }
+
+    static string? Truncate(object value, int maxChars)
+    {
+        if (value is string a)
+        {
+            return a.Length <= maxChars ? a : a.Substring(0, maxChars) + "...";
+        }
+
+        return value.ToString();
     }
 }

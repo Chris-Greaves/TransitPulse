@@ -1,9 +1,12 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Azure;
 using Microsoft.FluentUI.AspNetCore.Components;
 using TransitPulse.Web.Components;
 using TransitPulse.Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.AddServiceDefaults();
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
@@ -17,7 +20,11 @@ builder.Services.AddAzureClients(acBuilder =>
 builder.Services.AddHttpClient();
 builder.Services.AddFluentUIComponents();
 
-builder.Services.AddScoped<IServiceBusService, ServiceBusService>();
+builder.Services.AddDbContextFactory<QueueDbContext>(options => options.UseSqlite($"Filename={QueueDbContext.SqliteDbFilename}"));
+
+builder.Services.AddTransient<IServiceBusService, ServiceBusService>();
+
+builder.Services.AddHostedService<DataSynchronizer>();
 
 var app = builder.Build();
 
